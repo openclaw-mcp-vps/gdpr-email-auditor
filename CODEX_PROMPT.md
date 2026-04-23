@@ -11,26 +11,24 @@ NICHE: legal-compliance
 PRICE: $$19/mo
 
 ARCHITECTURE SPEC:
-A Next.js web app that processes uploaded email lists (CSV/Excel) through a compliance analysis engine, generates detailed audit reports with consent gaps, and provides actionable cleanup recommendations. Uses Lemon Squeezy for subscription billing and stores audit history in a database.
+Next.js SaaS app with file upload for CSV/Excel email lists, automated GDPR compliance scanning using consent validation rules, and dashboard showing compliance gaps with actionable cleanup recommendations. Uses Lemon Squeezy for subscription billing and stores audit results in PostgreSQL.
 
 PLANNED FILES:
 - app/page.tsx
 - app/dashboard/page.tsx
-- app/upload/page.tsx
 - app/audit/[id]/page.tsx
 - app/api/upload/route.ts
 - app/api/audit/route.ts
 - app/api/webhooks/lemonsqueezy/route.ts
-- components/FileUploader.tsx
-- components/AuditReport.tsx
-- components/ComplianceScore.tsx
-- lib/email-parser.ts
-- lib/gdpr-analyzer.ts
+- components/FileUpload.tsx
+- components/ComplianceReport.tsx
+- components/ContactTable.tsx
+- lib/gdpr-scanner.ts
 - lib/lemonsqueezy.ts
-- lib/database.ts
+- lib/db.ts
 - prisma/schema.prisma
 
-DEPENDENCIES: next, react, tailwindcss, @prisma/client, prisma, @lemonsqueezy/lemonsqueezy.js, papaparse, xlsx, recharts, lucide-react, @radix-ui/react-dialog, @radix-ui/react-progress, next-auth, zod
+DEPENDENCIES: next, tailwindcss, prisma, @prisma/client, postgres, @lemonsqueezy/lemonsqueezy.js, papaparse, xlsx, date-fns, lucide-react, @radix-ui/react-dialog, @radix-ui/react-select, recharts
 
 REQUIREMENTS:
 - Next.js 15 with App Router (app/ directory)

@@ -1,154 +1,79 @@
+import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { ArrowRight, FileClock, Plus } from "lucide-react";
-import { listAuditReports } from "@/lib/database";
-import { requirePaidAccessForPage } from "@/lib/paywall";
-import { AuditTrendChart } from "@/components/AuditTrendChart";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { FileUpload } from "@/components/FileUpload";
+import { ACCESS_COOKIE_NAME, hasValidAccessToken } from "@/lib/access";
+import { getRecentAudits } from "@/lib/db";
+
+export const metadata = {
+  title: "Dashboard"
+};
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  await requirePaidAccessForPage();
-  const audits = listAuditReports(30);
+  const cookieStore = await cookies();
+  const hasAccess = hasValidAccessToken(cookieStore.get(ACCESS_COOKIE_NAME)?.value);
 
-  const trendData = [...audits]
-    .reverse()
-    .map((audit) => ({
-      date: new Date(audit.createdAt).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      }),
-      score: audit.score,
-      highRiskContacts: audit.highRiskContacts,
-    }));
+  if (!hasAccess) {
+    redirect("/unlock");
+  }
 
-  const latestAudit = audits[0];
+  const audits = await getRecentAudits(12);
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <main className="min-h-screen bg-[#0d1117]">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#2a3d52] bg-[#111a24]/80 px-5 py-4">
           <div>
-            <Badge variant="default">Paid Workspace</Badge>
-            <h1 className="mt-2 font-[var(--font-heading)] text-4xl font-bold">Compliance Dashboard</h1>
-            <p className="mt-2 text-[#8b949e]">
-              Track GDPR risk across every uploaded list and prioritize remediation.
-            </p>
+            <h1 className="font-[var(--font-heading)] text-3xl font-bold">Compliance Dashboard</h1>
+            <p className="text-sm text-[#8ea2bd]">Upload lists, run audits, and track remediation progress.</p>
           </div>
-          <Button asChild className="gap-2">
-            <Link href="/upload">
-              <Plus className="h-4 w-4" />
-              New Audit
-            </Link>
-          </Button>
-        </div>
+          <Link
+            href="/"
+            className="rounded-xl border border-[#37516d] bg-[#162638] px-4 py-2 text-sm font-semibold text-[#d6e4f2] transition hover:bg-[#20344a]"
+          >
+            Back to site
+          </Link>
+        </header>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Audits Run</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-[var(--font-heading)] text-3xl font-bold">{audits.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Latest Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-[var(--font-heading)] text-3xl font-bold">
-                {latestAudit ? latestAudit.score : "—"}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Latest High-Risk</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-[var(--font-heading)] text-3xl font-bold text-[#f85149]">
-                {latestAudit ? latestAudit.highRiskContacts : "—"}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Missing Consent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-[var(--font-heading)] text-3xl font-bold text-[#d29922]">
-                {latestAudit ? latestAudit.missingConsentContacts : "—"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <FileUpload />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Risk Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AuditTrendChart data={trendData} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Audit History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {audits.length === 0 ? (
-              <div className="rounded-lg border border-[#30363d] bg-[#0d1117] p-5 text-[#8b949e]">
-                <p className="flex items-center gap-2">
-                  <FileClock className="h-4 w-4" />
+          <section className="rounded-2xl border border-[#253549] bg-[#111a24]/80 p-6">
+            <h2 className="mb-4 font-[var(--font-heading)] text-xl font-semibold">Recent audits</h2>
+            <div className="space-y-3">
+              {audits.length === 0 ? (
+                <p className="rounded-lg border border-[#2a3d52] bg-[#0f1621] p-3 text-sm text-[#8ea2bd]">
                   No audits yet. Upload your first list to generate a compliance report.
                 </p>
-                <Button asChild className="mt-4">
-                  <Link href="/upload">Run First Audit</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-[#30363d]">
-                <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-[#0d1117] text-left text-[#8b949e]">
-                    <tr>
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">File</th>
-                      <th className="px-4 py-3">Score</th>
-                      <th className="px-4 py-3">High-Risk</th>
-                      <th className="px-4 py-3">Missing Consent</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {audits.map((audit) => (
-                      <tr key={audit.id} className="border-t border-[#30363d]">
-                        <td className="px-4 py-3 text-[#c9d1d9]">
-                          {new Date(audit.createdAt).toLocaleString()}
-                        </td>
-                        <td className="max-w-[260px] truncate px-4 py-3 text-[#c9d1d9]">
-                          {audit.fileName}
-                        </td>
-                        <td className="px-4 py-3 text-[#c9d1d9]">{audit.score}</td>
-                        <td className="px-4 py-3 text-[#ff7b72]">{audit.highRiskContacts}</td>
-                        <td className="px-4 py-3 text-[#d29922]">{audit.missingConsentContacts}</td>
-                        <td className="px-4 py-3">
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/audit/${audit.id}`}>
-                              View Report
-                              <ArrowRight className="ml-2 h-3 w-3" />
-                            </Link>
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                audits.map((audit) => (
+                  <Link
+                    key={audit.id}
+                    href={`/audit/${audit.id}`}
+                    className="block rounded-xl border border-[#2a3d52] bg-[#0f1621] p-4 transition hover:border-[#3a5574] hover:bg-[#131f2f]"
+                  >
+                    <p className="truncate text-sm font-medium text-[#dce8f5]">{audit.fileName}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#8ea2bd]">
+                      <span>Score: {audit.complianceScore}%</span>
+                      <span>Contacts: {audit.totalContacts.toLocaleString()}</span>
+                      <span className={audit.criticalContacts > 0 ? "text-[#ff9da8]" : "text-[#57e1aa]"}>
+                        Critical: {audit.criticalContacts}
+                      </span>
+                      <span>
+                        {formatDistanceToNow(new Date(audit.createdAt), {
+                          addSuffix: true
+                        })}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );

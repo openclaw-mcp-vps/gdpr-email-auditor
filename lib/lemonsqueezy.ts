@@ -1,2 +1,5 @@
-export const LEMONSQUEEZY_DEPRECATED_MESSAGE =
-  "Lemon Squeezy integration is disabled for this build. Use Stripe Payment Link checkout and Stripe webhooks instead.";
+// Legacy filename kept intentionally to match existing architecture docs.
+// The app now uses Stripe Payment Links directly.
+export function getHostedCheckoutLink() {
+  return process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
+}

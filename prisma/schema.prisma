@@ -1,0 +1,2 @@
+// This repository intentionally avoids Prisma runtime usage.
+// Direct SQL via the `postgres` package is used for Vercel-safe deploys.

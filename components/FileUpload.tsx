@@ -1,47 +1,34 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, UploadCloud } from "lucide-react";
+import { Upload, FileSpreadsheet, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
-import type { ContactRecord, UploadResponse } from "@/types/audit";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface FileUploadProps {
-  onDatasetReady: (dataset: UploadResponse) => void;
-}
-
-function humanFileSize(size: number): string {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-export function FileUpload({ onDatasetReady }: FileUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function FileUpload() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<ContactRecord[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const accept = useMemo(() => ".csv,.xlsx,.xls", []);
-
-  const onSelectFile = useCallback((selected: File | null) => {
-    if (!selected) return;
-    setError(null);
-    setFile(selected);
-  }, []);
-
-  const handleUpload = useCallback(async () => {
+  const helperText = useMemo(() => {
     if (!file) {
-      setError("Choose a CSV or Excel file before starting the audit.");
+      return "Upload CSV, XLS, or XLSX with columns like email, consent_date, consent_source, and proof fields.";
+    }
+
+    const mb = (file.size / 1024 / 1024).toFixed(2);
+    return `${file.name} selected (${mb} MB)`;
+  }, [file]);
+
+  async function handleUpload() {
+    if (!file) {
+      setError("Choose a file before running an audit.");
       return;
     }
 
-    try {
-      setIsUploading(true);
-      setError(null);
+    setError(null);
+    setIsUploading(true);
 
+    try {
       const formData = new FormData();
       formData.append("file", file);
 
@@ -50,104 +37,54 @@ export function FileUpload({ onDatasetReady }: FileUploadProps) {
         body: formData
       });
 
-      const payload = (await response.json()) as UploadResponse | { error: string };
+      const payload = (await response.json()) as { error?: string; auditId?: string };
 
-      if (!response.ok) {
-        const message = "error" in payload ? payload.error : "Upload failed.";
-        throw new Error(message);
+      if (!response.ok || !payload.auditId) {
+        throw new Error(payload.error ?? "Upload failed. Try again.");
       }
 
-      const uploadResult = payload as UploadResponse;
-      setPreview(uploadResult.preview);
-      onDatasetReady(uploadResult);
-    } catch (caughtError) {
-      const message = caughtError instanceof Error ? caughtError.message : "Upload failed.";
-      setError(message);
+      router.push(`/audit/${payload.auditId}`);
+      router.refresh();
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
     } finally {
       setIsUploading(false);
     }
-  }, [file, onDatasetReady]);
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <FileSpreadsheet className="h-5 w-5 text-cyan-400" />
-          Upload Your Marketing List
-        </CardTitle>
-        <CardDescription>
-          We support CSV, XLSX, and XLS files with columns for email, consent status, consent date,
-          and source.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-700 bg-slate-950/70 p-10 text-center transition hover:border-cyan-500/70"
-        >
-          <UploadCloud className="h-9 w-9 text-cyan-400" />
-          <p className="text-sm font-medium text-slate-100">
-            {file ? file.name : "Drag and drop your list, or click to select a file"}
-          </p>
-          <p className="text-xs text-slate-400">
-            {file
-              ? `${humanFileSize(file.size)} ready for audit`
-              : "Files up to 50MB are accepted for compliance analysis."}
-          </p>
-        </button>
+    <section className="rounded-2xl border border-[#253549] bg-[#111a24]/80 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="rounded-xl bg-[#1f9d8f]/20 p-2 text-[#52d4c3]">
+          <FileSpreadsheet className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="font-[var(--font-heading)] text-xl font-semibold text-[#e7edf5]">Upload a marketing list</h2>
+          <p className="text-sm text-[#8ea2bd]">The scanner flags missing legal basis evidence and high-risk recipients.</p>
+        </div>
+      </div>
 
+      <div className="rounded-xl border border-dashed border-[#3a4a60] bg-[#0f1621] p-5">
         <input
-          ref={inputRef}
           type="file"
-          accept={accept}
-          className="hidden"
-          onChange={(event) => onSelectFile(event.target.files?.[0] ?? null)}
+          accept=".csv,.xls,.xlsx"
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+          className="mb-3 block w-full cursor-pointer rounded-lg border border-[#2a3a4e] bg-[#111a24] px-3 py-2 text-sm text-[#c7d7ea] file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-[#1f9d8f] file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#061219]"
         />
+        <p className="text-sm text-[#8ea2bd]">{helperText}</p>
+      </div>
 
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {error ? <p className="mt-4 rounded-lg bg-[#f05252]/10 px-3 py-2 text-sm text-[#ff9f9f]">{error}</p> : null}
 
-        <Button onClick={handleUpload} disabled={isUploading} className="w-full">
-          {isUploading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing list
-            </>
-          ) : (
-            "Start GDPR Audit"
-          )}
-        </Button>
-
-        {preview.length > 0 ? (
-          <div className="rounded-lg border border-slate-800">
-            <div className="border-b border-slate-800 px-4 py-3 text-sm font-semibold text-slate-100">
-              Contact preview
-            </div>
-            <div className="max-h-64 overflow-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-900 text-slate-400">
-                  <tr>
-                    <th className="px-4 py-2">Email</th>
-                    <th className="px-4 py-2">Consent</th>
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.map((row) => (
-                    <tr key={row.email} className="border-t border-slate-800 text-slate-200">
-                      <td className="px-4 py-2">{row.email}</td>
-                      <td className="px-4 py-2">{row.consentStatus}</td>
-                      <td className="px-4 py-2">{row.consentDate ?? "-"}</td>
-                      <td className="px-4 py-2">{row.source ?? "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      <button
+        type="button"
+        onClick={handleUpload}
+        disabled={isUploading}
+        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1f9d8f] px-4 py-3 font-semibold text-[#07161a] transition hover:bg-[#2bc5b3] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        {isUploading ? "Auditing list..." : "Run GDPR Audit"}
+      </button>
+    </section>
   );
 }

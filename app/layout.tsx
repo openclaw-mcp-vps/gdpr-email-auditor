@@ -1,78 +1,62 @@
-import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
+import type { Metadata } from "next";
+import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const headingFont = Space_Grotesk({
+const heading = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-heading",
-  weight: ["500", "700"],
+  display: "swap"
 });
 
-const bodyFont = IBM_Plex_Sans({
+const body = IBM_Plex_Sans({
   subsets: ["latin"],
   variable: "--font-body",
-  weight: ["400", "500", "600"],
+  display: "swap"
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://gdpr-email-auditor.com"),
   title: {
-    default: "GDPR Email Auditor | Audit Email Lists for Consent Gaps",
-    template: "%s | GDPR Email Auditor",
+    default: "GDPR Email Auditor",
+    template: "%s | GDPR Email Auditor"
   },
   description:
-    "Scan email marketing lists, detect missing GDPR consent records, and launch cleanup actions before violations become fines.",
+    "Audit marketing email lists for consent gaps, suppress risky contacts, and keep GDPR compliance evidence in one dashboard.",
   keywords: [
-    "GDPR email compliance",
-    "email consent audit",
-    "marketing list GDPR",
-    "consent records",
-    "data privacy software",
+    "GDPR",
+    "email compliance",
+    "consent audit",
+    "marketing compliance",
+    "email list cleanup"
   ],
   openGraph: {
     title: "GDPR Email Auditor",
     description:
-      "Find risky contacts in your email lists, generate audit evidence, and track GDPR compliance status over time.",
-    url: "https://gdpr-email-auditor.com",
-    siteName: "GDPR Email Auditor",
+      "Scan CSV and Excel mailing lists to find missing consent records before they become seven-figure fines.",
     type: "website",
-    images: [
-      {
-        url: "/og-image.svg",
-        width: 1200,
-        height: 630,
-        alt: "GDPR Email Auditor dashboard preview",
-      },
-    ],
+    url: "https://gdpr-email-auditor.com",
+    siteName: "GDPR Email Auditor"
   },
   twitter: {
     card: "summary_large_image",
     title: "GDPR Email Auditor",
     description:
-      "Audit email lists for GDPR consent gaps and prioritize high-risk records in minutes.",
-    images: ["/og-image.svg"],
+      "Spot missing consent records and fix risky marketing contacts in minutes."
   },
   robots: {
     index: true,
-    follow: true,
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#0d1117",
+    follow: true
+  }
 };
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${headingFont.variable} ${bodyFont.variable} bg-[#0d1117] text-[#e6edf3] antialiased`}
-        style={{ fontFamily: "var(--font-body), sans-serif" }}
-      >
+      <body className={`${heading.variable} ${body.variable} bg-[#0d1117] text-[#e7edf5] antialiased`}>
         {children}
       </body>
     </html>
