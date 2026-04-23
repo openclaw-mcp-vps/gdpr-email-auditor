@@ -1,44 +1,55 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { z } from "zod";
-
+import { NextRequest, NextResponse } from "next/server";
+import { parseUploadedFile } from "@/lib/email-parser";
 import { analyzeGdprCompliance } from "@/lib/gdpr-analyzer";
-import { getDataset, saveAudit } from "@/lib/database";
-import { hasApiAccess } from "@/lib/paywall";
+import { saveAuditReport } from "@/lib/database";
+import { ACCESS_COOKIE_NAME, verifyAccessToken } from "@/lib/paywall";
 
 export const runtime = "nodejs";
 
-const requestSchema = z.object({
-  datasetId: z.string().min(1),
-  listName: z.string().min(1).optional()
-});
-
 export async function POST(request: NextRequest) {
-  if (!hasApiAccess(request)) {
+  const accessToken = request.cookies.get(ACCESS_COOKIE_NAME)?.value;
+  const access = verifyAccessToken(accessToken);
+
+  if (!access) {
     return NextResponse.json(
-      { error: "Paid access is required. Complete checkout before running audits." },
-      { status: 402 }
+      { error: "Paid access required. Complete checkout to unlock audits." },
+      { status: 403 }
     );
   }
 
+  const formData = await request.formData();
+  const file = formData.get("file");
+
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "File is required." }, { status: 400 });
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
   try {
-    const body = await request.json();
-    const parsed = requestSchema.safeParse(body);
+    const parsed = parseUploadedFile({
+      fileName: file.name,
+      mimeType: file.type,
+      buffer,
+    });
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
-    }
+    const report = analyzeGdprCompliance({
+      fileName: file.name,
+      contacts: parsed.contacts,
+      parserNotes: parsed.parserNotes,
+    });
 
-    const dataset = getDataset(parsed.data.datasetId);
-    if (!dataset) {
-      return NextResponse.json({ error: "Uploaded dataset not found." }, { status: 404 });
-    }
+    saveAuditReport(report);
 
-    const report = analyzeGdprCompliance(parsed.data.listName ?? dataset.filename, dataset.contacts);
-    saveAudit(report);
-
-    return NextResponse.json(report);
+    return NextResponse.json({
+      auditId: report.id,
+      summary: report.summary,
+      findingsCount: report.findings.length,
+      recommendations: report.recommendations,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Audit failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Audit processing failed.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

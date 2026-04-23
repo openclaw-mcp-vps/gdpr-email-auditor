@@ -11,26 +11,26 @@ NICHE: legal-compliance
 PRICE: $$19/mo
 
 ARCHITECTURE SPEC:
-A Next.js web app that processes uploaded email lists (CSV/Excel) to identify GDPR compliance gaps by checking consent records, opt-in dates, and data sources. Features a dashboard showing compliance status, risk assessment, and automated cleanup recommendations with export capabilities.
+A Next.js web app that processes uploaded email lists (CSV/Excel) through a compliance analysis engine, generates detailed audit reports with consent gaps, and provides actionable cleanup recommendations. Uses Lemon Squeezy for subscription billing and stores audit history in a database.
 
 PLANNED FILES:
 - app/page.tsx
 - app/dashboard/page.tsx
 - app/upload/page.tsx
+- app/audit/[id]/page.tsx
 - app/api/upload/route.ts
 - app/api/audit/route.ts
 - app/api/webhooks/lemonsqueezy/route.ts
-- components/FileUpload.tsx
-- components/ComplianceReport.tsx
-- components/RiskAssessment.tsx
-- components/CleanupActions.tsx
+- components/FileUploader.tsx
+- components/AuditReport.tsx
+- components/ComplianceScore.tsx
+- lib/email-parser.ts
 - lib/gdpr-analyzer.ts
-- lib/consent-validator.ts
 - lib/lemonsqueezy.ts
 - lib/database.ts
-- types/audit.ts
+- prisma/schema.prisma
 
-DEPENDENCIES: next, tailwindcss, prisma, @prisma/client, sqlite3, papaparse, xlsx, @lemonsqueezy/lemonsqueezy.js, lucide-react, recharts, date-fns, zod
+DEPENDENCIES: next, react, tailwindcss, @prisma/client, prisma, @lemonsqueezy/lemonsqueezy.js, papaparse, xlsx, recharts, lucide-react, @radix-ui/react-dialog, @radix-ui/react-progress, next-auth, zod
 
 REQUIREMENTS:
 - Next.js 15 with App Router (app/ directory)

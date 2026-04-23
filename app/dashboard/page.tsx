@@ -1,117 +1,155 @@
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { BarChart3, LockKeyhole } from "lucide-react";
-
-import { ComplianceReport } from "@/components/ComplianceReport";
-import { RiskAssessment } from "@/components/RiskAssessment";
+import { ArrowRight, FileClock, Plus } from "lucide-react";
+import { listAuditReports } from "@/lib/database";
+import { requirePaidAccessForPage } from "@/lib/paywall";
+import { AuditTrendChart } from "@/components/AuditTrendChart";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getLatestAudit, getRecentAudits } from "@/lib/database";
-import { hasPageAccess } from "@/lib/paywall";
-
-const stripeLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
-
-export const metadata = {
-  title: "Dashboard | GDPR Email Auditor",
-  description: "Track GDPR compliance status and risk trends across uploads."
-};
 
 export default async function DashboardPage() {
-  const hasAccess = await hasPageAccess();
+  await requirePaidAccessForPage();
+  const audits = listAuditReports(30);
 
-  if (!hasAccess) {
-    return (
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <LockKeyhole className="h-6 w-6 text-cyan-400" />
-            Dashboard Locked
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-slate-300">
-          <p>Subscribe to access historical compliance reports, risk score trendlines, and export tools.</p>
-          <a href={stripeLink} className="block">
-            <Button className="w-full">Unlock Dashboard - $19/mo</Button>
-          </a>
-          <Link href="/success" className="block">
-            <Button variant="outline" className="w-full">
-              Activate existing purchase
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    );
-  }
+  const trendData = [...audits]
+    .reverse()
+    .map((audit) => ({
+      date: new Date(audit.createdAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      }),
+      score: audit.score,
+      highRiskContacts: audit.highRiskContacts,
+    }));
 
-  const latestAudit = getLatestAudit();
-  const recentAudits = getRecentAudits(8);
-
-  if (!latestAudit) {
-    return (
-      <Card className="mx-auto max-w-3xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <BarChart3 className="h-6 w-6 text-cyan-400" />
-            No Audits Yet
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-slate-300">
-          <p>Upload your first email list to generate a compliance baseline and risk report.</p>
-          <Link href="/upload">
-            <Button>Upload Your First List</Button>
-          </Link>
-        </CardContent>
-      </Card>
-    );
-  }
+  const latestAudit = audits[0];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-100">Compliance Dashboard</h1>
-        <p className="mt-2 text-sm text-slate-300">
-          Latest audit: <span className="font-semibold text-slate-100">{latestAudit.listName}</span> •
-          {" "}
-          {formatDistanceToNow(new Date(latestAudit.createdAt), { addSuffix: true })}
-        </p>
-      </div>
+    <main className="min-h-screen px-6 py-10">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Badge variant="default">Paid Workspace</Badge>
+            <h1 className="mt-2 font-[var(--font-heading)] text-4xl font-bold">Compliance Dashboard</h1>
+            <p className="mt-2 text-[#8b949e]">
+              Track GDPR risk across every uploaded list and prioritize remediation.
+            </p>
+          </div>
+          <Button asChild className="gap-2">
+            <Link href="/upload">
+              <Plus className="h-4 w-4" />
+              New Audit
+            </Link>
+          </Button>
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <RiskAssessment report={latestAudit} />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Audits Run</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-[var(--font-heading)] text-3xl font-bold">{audits.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Latest Score</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-[var(--font-heading)] text-3xl font-bold">
+                {latestAudit ? latestAudit.score : "—"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Latest High-Risk</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-[var(--font-heading)] text-3xl font-bold text-[#f85149]">
+                {latestAudit ? latestAudit.highRiskContacts : "—"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Missing Consent</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-[var(--font-heading)] text-3xl font-bold text-[#d29922]">
+                {latestAudit ? latestAudit.missingConsentContacts : "—"}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Recent Audits</CardTitle>
+            <CardTitle>Risk Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto rounded-lg border border-slate-800">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-900 text-slate-400">
-                  <tr>
-                    <th className="px-3 py-2">List</th>
-                    <th className="px-3 py-2">Compliance</th>
-                    <th className="px-3 py-2">Risk</th>
-                    <th className="px-3 py-2">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentAudits.map((audit) => (
-                    <tr key={audit.id} className="border-t border-slate-800 text-slate-200">
-                      <td className="px-3 py-2">{audit.listName}</td>
-                      <td className="px-3 py-2">{audit.complianceRate}%</td>
-                      <td className="px-3 py-2">{audit.risk.level}</td>
-                      <td className="px-3 py-2">
-                        {formatDistanceToNow(new Date(audit.createdAt), { addSuffix: true })}
-                      </td>
+            <AuditTrendChart data={trendData} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Audit History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {audits.length === 0 ? (
+              <div className="rounded-lg border border-[#30363d] bg-[#0d1117] p-5 text-[#8b949e]">
+                <p className="flex items-center gap-2">
+                  <FileClock className="h-4 w-4" />
+                  No audits yet. Upload your first list to generate a compliance report.
+                </p>
+                <Button asChild className="mt-4">
+                  <Link href="/upload">Run First Audit</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-[#30363d]">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-[#0d1117] text-left text-[#8b949e]">
+                    <tr>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">File</th>
+                      <th className="px-4 py-3">Score</th>
+                      <th className="px-4 py-3">High-Risk</th>
+                      <th className="px-4 py-3">Missing Consent</th>
+                      <th className="px-4 py-3">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {audits.map((audit) => (
+                      <tr key={audit.id} className="border-t border-[#30363d]">
+                        <td className="px-4 py-3 text-[#c9d1d9]">
+                          {new Date(audit.createdAt).toLocaleString()}
+                        </td>
+                        <td className="max-w-[260px] truncate px-4 py-3 text-[#c9d1d9]">
+                          {audit.fileName}
+                        </td>
+                        <td className="px-4 py-3 text-[#c9d1d9]">{audit.score}</td>
+                        <td className="px-4 py-3 text-[#ff7b72]">{audit.highRiskContacts}</td>
+                        <td className="px-4 py-3 text-[#d29922]">{audit.missingConsentContacts}</td>
+                        <td className="px-4 py-3">
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/audit/${audit.id}`}>
+                              View Report
+                              <ArrowRight className="ml-2 h-3 w-3" />
+                            </Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      <ComplianceReport report={latestAudit} />
-    </div>
+    </main>
   );
 }

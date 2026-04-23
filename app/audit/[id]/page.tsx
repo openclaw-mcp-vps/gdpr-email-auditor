@@ -1,10 +1,22 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { FileUploader } from "@/components/FileUploader";
+import { AuditReport } from "@/components/AuditReport";
+import { getAuditReportById } from "@/lib/database";
 import { requirePaidAccessForPage } from "@/lib/paywall";
 
-export default async function UploadPage() {
+interface AuditDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function AuditDetailPage({ params }: AuditDetailPageProps) {
   await requirePaidAccessForPage();
+  const { id } = await params;
+
+  const report = getAuditReportById(id);
+  if (!report) {
+    notFound();
+  }
 
   return (
     <main className="min-h-screen px-6 py-10">
@@ -13,14 +25,7 @@ export default async function UploadPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to dashboard
         </Link>
-        <div>
-          <h1 className="font-[var(--font-heading)] text-4xl font-bold">Run New GDPR Audit</h1>
-          <p className="mt-2 text-[#8b949e]">
-            Upload a marketing list to identify missing consent records, high-risk contacts, and
-            cleanup actions.
-          </p>
-        </div>
-        <FileUploader />
+        <AuditReport report={report} />
       </div>
     </main>
   );

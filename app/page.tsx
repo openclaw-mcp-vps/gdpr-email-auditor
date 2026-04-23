@@ -1,250 +1,229 @@
 import Link from "next/link";
-import { CheckCircle2, FileWarning, Shield, Sparkles, TrendingDown } from "lucide-react";
-
+import { ArrowRight, CheckCircle2, Lock, ShieldAlert, TimerReset } from "lucide-react";
+import { hasAccessCookie } from "@/lib/paywall";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ClaimAccessForm } from "@/components/ClaimAccessForm";
 
-const stripeLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
-
-const faqs = [
+const faqItems = [
   {
-    question: "What files can I upload?",
+    question: "What data does the auditor need to run?",
     answer:
-      "CSV, XLSX, and XLS exports from Klaviyo, HubSpot, Mailchimp, Shopify, and most CRMs are supported."
+      "A CSV or Excel file with email address plus any available consent fields such as opt-in status, consent date, source, country, and unsubscribe state.",
   },
   {
-    question: "What does the audit check?",
+    question: "How does paid access work with Stripe Payment Link?",
     answer:
-      "Each contact is evaluated for explicit consent, consent timestamp evidence, source traceability, and stale consent risk."
+      "After checkout, Stripe sends a webhook. We record the paid email, and you unlock this browser by entering the same purchase email once.",
   },
   {
-    question: "Can I export cleanup-ready lists?",
+    question: "Can agencies audit multiple client lists?",
     answer:
-      "Yes. You can export non-compliant contacts as CSV plus a full JSON audit report for legal and operations teams."
+      "Yes. Each uploaded list generates a separate report with timestamped findings and cleanup recommendations you can share with clients.",
   },
   {
-    question: "How is access controlled?",
+    question: "Does this replace legal counsel?",
     answer:
-      "The workspace is behind a cookie-based paywall that unlocks only after a successful Stripe purchase verification."
-  }
+      "No. It accelerates evidence checks and operational remediation. Your legal team still decides final policy and risk acceptance.",
+  },
 ];
 
-export default function HomePage() {
-  return (
-    <div className="space-y-20 pb-12">
-      <section className="grid items-center gap-10 pt-4 md:grid-cols-2 md:pt-10">
-        <div>
-          <p className="mb-3 inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-            Legal-compliance • $19/month
-          </p>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-100 md:text-5xl">
-            Audit email lists for GDPR compliance gaps before they become expensive violations.
-          </h1>
-          <p className="mt-5 max-w-xl text-base text-slate-300 md:text-lg">
-            GDPR fines average €15M. Email marketing without provable consent is the most common violation,
-            and manual audits do not scale. GDPR Email Auditor scans your list, flags missing proof, and gives
-            your team a cleanup plan you can execute today.
-          </p>
+export default async function HomePage() {
+  const hasAccess = await hasAccessCookie();
 
-          <div className="mt-7 flex flex-wrap gap-3">
-            <a href={stripeLink} className="inline-flex">
-              <Button size="lg">Buy Now - $19/mo</Button>
-            </a>
-            <Link href="/upload">
-              <Button variant="outline" size="lg">
-                Open Workspace
+  return (
+    <main className="min-h-screen">
+      <header className="border-b border-[#30363d] bg-[#0d1117]/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link href="/" className="font-[var(--font-heading)] text-lg font-semibold tracking-tight">
+            GDPR Email Auditor
+          </Link>
+          <nav className="flex items-center gap-2">
+            {hasAccess ? (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/dashboard">Dashboard</Link>
               </Button>
-            </Link>
+            ) : null}
+            <Button asChild size="sm">
+              <a href={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK}>
+                Buy for $19/mo
+              </a>
+            </Button>
+          </nav>
+        </div>
+      </header>
+
+      <section className="relative overflow-hidden px-6 py-20">
+        <div className="mx-auto max-w-6xl">
+          <Badge variant="default" className="mb-6">
+            Legal Compliance · GDPR Email Marketing
+          </Badge>
+          <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h1
+                className="font-[var(--font-heading)] text-4xl font-bold leading-tight sm:text-5xl"
+                style={{ fontFamily: "var(--font-heading), sans-serif" }}
+              >
+                Audit email lists for GDPR consent gaps before regulators do.
+              </h1>
+              <p className="mt-6 max-w-xl text-lg text-[#8b949e]">
+                Upload your list, detect contacts without lawful consent evidence, and get a
+                prioritized cleanup plan in minutes. Stop guessing before your next campaign send.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button asChild size="lg" className="gap-2">
+                  <a href={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK}>
+                    Start Compliance Audits
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href={hasAccess ? "/upload" : "/unlock"}>Open the Tool</Link>
+                </Button>
+              </div>
+              <div className="mt-6 grid gap-3 text-sm text-[#8b949e] sm:grid-cols-3">
+                <div className="rounded-lg border border-[#30363d] bg-[#161b22]/70 p-3">
+                  Avg GDPR fine impact: €15M
+                </div>
+                <div className="rounded-lg border border-[#30363d] bg-[#161b22]/70 p-3">
+                  Built for e-commerce + SaaS
+                </div>
+                <div className="rounded-lg border border-[#30363d] bg-[#161b22]/70 p-3">
+                  Audit-ready remediation logs
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-6 shadow-2xl shadow-black/30">
+              <h2 className="font-[var(--font-heading)] text-xl font-semibold">Why teams switch</h2>
+              <div className="mt-5 space-y-4">
+                <div className="flex gap-3">
+                  <ShieldAlert className="mt-1 h-5 w-5 text-[#f85149]" />
+                  <div>
+                    <p className="font-medium">Manual consent audits do not scale</p>
+                    <p className="text-sm text-[#8b949e]">
+                      Large lists hide missing proof in thousands of rows and disconnected systems.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <TimerReset className="mt-1 h-5 w-5 text-[#2f81f7]" />
+                  <div>
+                    <p className="font-medium">Weekly monitoring beats annual panic audits</p>
+                    <p className="text-sm text-[#8b949e]">
+                      Track score trends over time and prevent risky records from re-entering sends.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Lock className="mt-1 h-5 w-5 text-[#3fb950]" />
+                  <div>
+                    <p className="font-medium">Paywall protects the live compliance engine</p>
+                    <p className="text-sm text-[#8b949e]">
+                      Stripe purchase verification unlocks secure cookie-based access to reports and uploads.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <p className="mt-3 text-sm text-slate-400">
-            After checkout, set your Stripe Payment Link to redirect users to
-            <span className="font-mono text-slate-300">
-              {" /success?session_id={CHECKOUT_SESSION_ID}"}
-            </span>
-            so access can be activated automatically.
+      <section className="border-y border-[#30363d] bg-[#11161d] px-6 py-16">
+        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+          <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-6">
+            <p className="text-sm uppercase tracking-wide text-[#8b949e]">Problem</p>
+            <h3 className="mt-3 font-[var(--font-heading)] text-2xl font-semibold">
+              Consent records are fragmented
+            </h3>
+            <p className="mt-3 text-sm text-[#8b949e]">
+              Marketing tools, CRMs, and legacy imports create blind spots where lawful basis
+              evidence is missing or stale.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-6">
+            <p className="text-sm uppercase tracking-wide text-[#8b949e]">Solution</p>
+            <h3 className="mt-3 font-[var(--font-heading)] text-2xl font-semibold">
+              Automated contact-level risk scoring
+            </h3>
+            <p className="mt-3 text-sm text-[#8b949e]">
+              Detect missing consent flags, dates, sources, double opt-in gaps, invalid emails, and
+              stale engagement in one pass.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-6">
+            <p className="text-sm uppercase tracking-wide text-[#8b949e]">Outcome</p>
+            <h3 className="mt-3 font-[var(--font-heading)] text-2xl font-semibold">
+              Clear remediation actions
+            </h3>
+            <p className="mt-3 text-sm text-[#8b949e]">
+              Know exactly which contacts to suppress, re-permission, or enrich before your next
+              campaign.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-8 text-center">
+          <p className="text-sm uppercase tracking-wider text-[#8b949e]">Pricing</p>
+          <h2 className="mt-3 font-[var(--font-heading)] text-4xl font-bold">$19/month</h2>
+          <p className="mt-4 text-[#8b949e]">
+            Unlimited list uploads, audit history tracking, risk scoring, and cleanup
+            recommendations.
           </p>
-        </div>
-
-        <Card className="border-cyan-500/25 bg-gradient-to-b from-slate-900 to-slate-950">
-          <CardHeader>
-            <CardTitle className="text-xl">What You Get in 60 Seconds</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-slate-300">
-            <Feature text="Detect contacts missing explicit consent records" />
-            <Feature text="Find missing opt-in dates and unverifiable data sources" />
-            <Feature text="Calculate risk level and estimated fine exposure" />
-            <Feature text="Export non-compliant contacts for immediate suppression" />
-            <Feature text="Track compliance trend across data sources and lists" />
-          </CardContent>
-        </Card>
-      </section>
-
-      <section id="problem" className="grid gap-6 md:grid-cols-3">
-        <ProblemCard
-          icon={FileWarning}
-          title="Manual audits break at scale"
-          description="Marketing teams inherit fragmented data from forms, imports, and sync jobs. Validating consent contact-by-contact is too slow and too error-prone."
-        />
-        <ProblemCard
-          icon={TrendingDown}
-          title="Compliance debt quietly grows"
-          description="Lists age, source metadata disappears, and campaigns keep sending. Exposure compounds until a complaint or regulator review forces emergency cleanup."
-        />
-        <ProblemCard
-          icon={Shield}
-          title="Regulatory downside is asymmetric"
-          description="A single non-compliant campaign can trigger legal review, list suppression, and major fines that dwarf the cost of prevention."
-        />
-      </section>
-
-      <section id="solution" className="space-y-5">
-        <h2 className="text-3xl font-bold text-slate-100">A focused workflow for compliance teams and marketers</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <SolutionCard
-            number="01"
-            title="Upload"
-            description="Drop in a CSV or Excel list from your CRM or ESP."
-          />
-          <SolutionCard
-            number="02"
-            title="Audit"
-            description="Automatically score consent quality, source traceability, and stale permissions."
-          />
-          <SolutionCard
-            number="03"
-            title="Remediate"
-            description="Export suppression and cleanup lists with a prioritized action plan."
-          />
-        </div>
-      </section>
-
-      <section id="pricing" className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Simple pricing for continuous compliance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-slate-300">
-            <p>
-              Perfect for e-commerce brands, SaaS teams, and agencies that manage outbound campaigns and
-              cannot risk sending to contacts without lawful basis evidence.
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg" className="gap-2">
+              <a href={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK}>
+                Subscribe via Stripe
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/unlock">Already purchased?</Link>
+            </Button>
+          </div>
+          <div className="mt-6 grid gap-2 text-left text-sm text-[#c9d1d9] sm:grid-cols-2">
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#3fb950]" />
+              CSV and Excel ingestion
             </p>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-400" />
-                Unlimited list uploads and audits
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-400" />
-                Risk scoring with estimated fine exposure
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-400" />
-                Export non-compliant contacts and full reports
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-400" />
-                Dashboard for historical compliance tracking
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="border-cyan-500/30 bg-slate-950/80">
-          <CardHeader>
-            <CardTitle className="text-2xl">$19 / month</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-slate-300">
-              Start protecting every campaign with auditable consent checks.
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#3fb950]" />
+              Contact-level risk evidence
             </p>
-            <a href={stripeLink} className="block">
-              <Button className="w-full" size="lg">
-                Continue to Stripe Checkout
-              </Button>
-            </a>
-            <p className="text-xs text-slate-500">
-              Hosted Stripe checkout. No embedded payment forms, no custom card handling.
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#3fb950]" />
+              Downloadable findings export
             </p>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section id="faq" className="space-y-4">
-        <h2 className="text-3xl font-bold text-slate-100">FAQ</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          {faqs.map((faq) => (
-            <Card key={faq.question}>
-              <CardContent className="pt-6">
-                <p className="font-semibold text-slate-100">{faq.question}</p>
-                <p className="mt-2 text-sm text-slate-300">{faq.answer}</p>
-              </CardContent>
-            </Card>
-          ))}
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#3fb950]" />
+              Ongoing compliance history
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-cyan-500/10 via-transparent to-emerald-500/10 p-8 text-center">
-        <Sparkles className="mx-auto mb-3 h-7 w-7 text-cyan-300" />
-        <h2 className="text-2xl font-bold text-slate-100">Turn compliance from fire drills into routine operations</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-300 md:text-base">
-          Run every campaign with confidence by proving consent quality before send time.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <a href={stripeLink}>
-            <Button size="lg">Buy Now - Secure Hosted Checkout</Button>
-          </a>
+      <section className="px-6 pb-16">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-[var(--font-heading)] text-3xl font-bold">FAQ</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {faqItems.map((item) => (
+              <div key={item.question} className="rounded-xl border border-[#30363d] bg-[#161b22]/70 p-5">
+                <h3 className="font-semibold">{item.question}</h3>
+                <p className="mt-2 text-sm text-[#8b949e]">{item.answer}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
-    </div>
-  );
-}
 
-function Feature({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-400" />
-      <p>{text}</p>
-    </div>
-  );
-}
-
-function ProblemCard({
-  icon: Icon,
-  title,
-  description
-}: {
-  icon: typeof FileWarning;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <Icon className="mb-3 h-6 w-6 text-orange-300" />
-        <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
-        <p className="mt-2 text-sm text-slate-300">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SolutionCard({
-  number,
-  title,
-  description
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <p className="text-xs font-semibold tracking-wider text-cyan-300">STEP {number}</p>
-        <h3 className="mt-1 text-lg font-semibold text-slate-100">{title}</h3>
-        <p className="mt-2 text-sm text-slate-300">{description}</p>
-      </CardContent>
-    </Card>
+      <section className="px-6 pb-20">
+        <div className="mx-auto max-w-6xl">
+          <ClaimAccessForm />
+        </div>
+      </section>
+    </main>
   );
 }
