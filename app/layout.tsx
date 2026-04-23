@@ -1,64 +1,20 @@
-import type { Metadata } from "next";
-import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
-import "./globals.css";
-
-const heading = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-heading",
-  display: "swap"
-});
-
-const body = IBM_Plex_Sans({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap"
-});
+import type { Metadata } from 'next'
+import './globals.css'
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gdpr-email-auditor.com"),
-  title: {
-    default: "GDPR Email Auditor",
-    template: "%s | GDPR Email Auditor"
-  },
-  description:
-    "Audit marketing email lists for consent gaps, suppress risky contacts, and keep GDPR compliance evidence in one dashboard.",
-  keywords: [
-    "GDPR",
-    "email compliance",
-    "consent audit",
-    "marketing compliance",
-    "email list cleanup"
-  ],
-  openGraph: {
-    title: "GDPR Email Auditor",
-    description:
-      "Scan CSV and Excel mailing lists to find missing consent records before they become seven-figure fines.",
-    type: "website",
-    url: "https://gdpr-email-auditor.com",
-    siteName: "GDPR Email Auditor"
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "GDPR Email Auditor",
-    description:
-      "Spot missing consent records and fix risky marketing contacts in minutes."
-  },
-  robots: {
-    index: true,
-    follow: true
-  }
-};
+  title: 'GDPR Email Auditor — Audit Email Lists for Compliance Gaps',
+  description: 'Scan your email marketing lists to identify contacts without proper consent records, get cleanup recommendations, and track GDPR compliance status.'
+}
 
-export default function RootLayout({
-  children
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${heading.variable} ${body.variable} bg-[#0d1117] text-[#e7edf5] antialiased`}>
-        {children}
-      </body>
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script defer src="https://umami.microtool.dev/script.js" data-website-id="94a066d1-5dbb-4e05-90c1-f8f1efdbb46f"></script>
+      </head>
+      <body className="bg-[#0d1117] text-[#c9d1d9] antialiased">{children}</body>
     </html>
-  );
+  )
 }
